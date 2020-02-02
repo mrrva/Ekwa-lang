@@ -5,7 +5,7 @@ void ekwa_codegen(struct ekwa_function *list) {
 	struct ekwa_function *func = list;
 	struct ekwa_binarycode *code = NULL;
 	struct ekwa_bytecode *tmp;
-	size_t line = 0; // Chould be: runtime size + size of the end function
+	size_t line = 0; // should be: runtime size + size of the end function
 
 	if (!list || list == NULL) {
 		printf("[E]: Bytecode list is empty.\n");
