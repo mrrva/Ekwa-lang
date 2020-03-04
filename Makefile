@@ -1,18 +1,10 @@
 
-all:
-	gcc -Wall ekwa.c reader.c codegen.c opcodes.c tokens.c -std=c11 -o ekwa
-
-runtime:
-	nasm -f elf32 runtime.s -o runtime.o -lc
+test:
+	rm -f runtime.o
+	rm -f libruntime.so
+	nasm -f elf32 runtime.s -o runtime.o -lc -g
 	ld -shared -o libruntime.so runtime.o -m elf_i386 -lc
-	gcc -Wall debug.c -o debug -L"./" -I"./" -Wl,--rpath="./" -lruntime -std=c11 -m32
-
-de:
-	objdump -M intel intel-mnemonic -d libruntime.so
+	gcc -Wall test.c -o test -L"./" -I"./" -Wl,--rpath="./" -lruntime -std=c11 -m32 -g
 
 debug:
-	gcc debug.c -o debug
-
-test:
-	nasm -f elf32 test.s -o test.o -lc
-	ld -s -o test test.o -m elf_i386
+	objdump -M intel intel-mnemonic -d test

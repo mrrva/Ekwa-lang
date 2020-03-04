@@ -1,9 +1,0 @@
-EKWA_FUNC	main
-EKWA_FARG	arg1
-EKWA_FARG	arg2
-EKWA_VAR	test_var	EKWA_STRING
-EKWA_VAL	test_var	Hello World!
-EKWA_SHOW	test_var
-EKWA_SHOW	arg1
-EKWA_RET	arg2
-

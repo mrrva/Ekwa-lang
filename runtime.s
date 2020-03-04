@@ -1,297 +1,413 @@
 extern malloc
 extern free
 ;
-; Global functions.
-;
-global _start
-;
-; Global buffer for pointers.
+; Buffer declaration - We use buffer for moving data
+; between vars. Using with tokens: PBUF, BUFF, WRT.
 ;
 section .bss
 	global _buffer
 	_buffer resb 9
+;
+; Debug part - If you do not want to debug runtime
+; functions just delete line after.
+;
+%define _DEBUG_
+%ifdef  _DEBUG_
+	global _runtime_PBUF
+	global _runtime_BUFF
+	global _runtime_IFNE
+	global _runtime_IFB
+	global _runtime_IFS
+	global _runtime_VAR
+	global _runtime_VAL
+	global _runtime_WRT
+	global _runtime_IFE
+	global _runtime_CAT
+	global _runtime_ADD
+%endif
 
 section .text
 ;
-; Variable creation.
+; Public functions - Functions list which will be
+; used by compiler for code generation.
 ;
-runtime_varnew:
+_runtime_VAR:
 	push ebp
 	mov ebp, esp
-	mov dh, [ebp + 8]        ; Var type
+	sub esp, 1
+	mov edx, [ebp + 8]
+	mov [ebp - 1], dl
 	xor eax, eax
 	push 9
 	call malloc
 	test eax, eax
-	jz _ekwa_exit
-	mov byte [eax], dh
+	jz _private_exit
+	mov dl, [ebp - 1]
+	mov [eax], dl
 	mov dword [eax + 1], 0
+	mov dword [eax + 5], 0
 	mov esp, ebp
 	pop ebp
 	ret
-;
-; Set value of the var.
-;
-runtime_varval:
+
+_runtime_VAL:
 	push ebp
 	mov ebp, esp
-	mov edi, [ebp + 8]       ; Var address
-	mov edx, [ebp + 12]      ; Buffer address.
-	test edi, edi
-	jz _ekwa_exit
+	mov edx, [ebp + 8]
+	mov edi, [ebp + 12]
+	mov ecx, [edi]
+	test ecx, ecx
+	jz _exit_val
+	mov [edx + 1], ecx
 	sub esp, 8
-	mov [ebp - 8], edi
-	mov edi, [edx]
-	cmp edi, 0
-	jz _ekwa_exit
-	push edi
+	mov [ebp - 4], edi
+	mov [ebp - 8], edx
+	push ecx
 	call malloc
-	;add esp, 4
+	pop ecx
 	test eax, eax
-	jz _ekwa_exit
-	mov [ebp - 4], edx
+	jz _private_exit
+	mov edi, [ebp - 4]
 	mov edx, [ebp - 8]
-	mov [edx + 1], edi
 	mov [edx + 5], eax
-	mov edx, [ebp - 4]
-	mov ecx, [edx + 1]
-	add edx, 4
-_cycle_varval:
+_cycle_val:
 	dec ecx
-	mov byte bh, [edx + ecx]
-	mov byte [eax + ecx], bh
-	jecxz _cycle_varval
+	mov dh, [edi + ecx + 4] 
+	mov [eax + ecx], dh
+	test ecx, ecx
+	jnz _cycle_val
+_exit_val:
 	mov esp, ebp
 	pop ebp
 	ret
-;
-; Set new buffer value.
-;
-runtime_varbuff:
+
+_runtime_WRT:
 	push ebp
 	mov ebp, esp
-	mov edi, [ebp + 8]       ; Var address
-	test edi, edi
-	jz _exit_varbuff
-	xor ecx, ecx
-_cycle_varbuff:
-	mov ah, [edi + ecx]
-	mov byte [_buffer + ecx], ah
-	inc ecx
-	cmp ecx, 9
-	jne _cycle_varbuff
-	mov edi, [_buffer + 1]
-	test edi, edi
-	jz _exit_varbuff
-	xor eax, eax
-	push edi
+	mov edx, [ebp + 8]
+	mov ecx, 9
+	; Delete value pointer.
+_cycle_wrt:
+	dec ecx
+	mov ah, [_buffer + ecx]
+	mov [edx + ecx], ah
+	test ecx, ecx
+	jnz _cycle_wrt
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_PBUF:
+	push ebp
+	mov ebp, esp
+	mov edx, [ebp + 8]
+	mov ecx, 9
+_cycle_pbuf:
+	dec ecx
+	mov ah, [edx + ecx]
+	mov [_buffer + ecx], ah
+	test ecx, ecx
+	jnz _cycle_pbuf
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_BUFF:
+	push ebp
+	mov ebp, esp
+	mov edx, [ebp + 8]
+	mov ecx, [edx + 1]
+	mov ah, [edx]
+	mov [_buffer], ah
+	mov [_buffer + 1], ecx
+	test ecx, ecx
+	jz _exit_buff
+	sub esp, 4
+	mov [ebp - 4], edx
+	push ecx
 	call malloc
+	pop ecx
 	test eax, eax
-	jz _ekwa_exit
-	xor ecx, ecx
-	mov edi, [_buffer + 5]
-_write_varbuff:
-	mov dh, [edi + ecx]
-	mov byte [eax + ecx], dh
-	inc ecx
-	cmp ecx, [_buffer + 1]
-	jne _write_varbuff
+	jz _private_exit
 	mov [_buffer + 5], eax
-_exit_varbuff:
-	mov esp, ebp
-	pop ebp
-	ret
-;
-; Set new buffer value as pointer.
-;
-runtime_varbuffptr:
-	push ebp
-	mov ebp, esp
-	mov edi, [ebp + 8]       ; Var address
-	test edi, edi
-	jz _exit_varbuffptr
-	xor ecx, ecx
-_cycle_varbuffptr:
-	mov ah, [edi + ecx]
-	mov byte [_buffer + ecx], ah
-	inc ecx
-	cmp ecx, 9
-	jne _cycle_varbuffptr
-_exit_varbuffptr:
-	mov esp, ebp
-	pop ebp
-	ret
-;
-; Write buffer to var.
-;
-runtime_varwrt:
-	push ebp
-	mov ebp, esp
-	mov edi, [ebp + 8]       ; Var address
-	xor ecx, ecx
-	push dword [edi + 5]
-	call runtime_rmvalvar
-_cycle_varwrt:
-	mov byte ah, [_buffer + ecx]
-	mov byte [edi + ecx], ah
-	inc ecx
-	cmp ecx, 9
-	jne _cycle_varwrt
-	call runtime_rmbuffer
-	mov esp, ebp
-	pop ebp
-	ret
-;
-; Clear buffer.
-;
-runtime_rmbuffer:
-	xor ecx, ecx
-	xor ah, ah
-_cycle_rmbuffer:
-	mov byte [_buffer + ecx], ah
-	inc ecx
-	cmp ecx, 9
-	jne _cycle_rmbuffer
-	ret
-;
-; Var removing.
-;
-runtime_rmvar:
-	push ebp
-	mov ebp, esp
-	mov edi, [ebp + 8]       ; Var address
-	push edi
-	call runtime_rmvalvar
-	call free
-	mov esp, ebp
-	pop ebp
-	ret
-;
-; Var value removing.
-;
-runtime_rmvalvar:
-	push ebp
-	mov ebp, esp
-	mov edi, [ebp + 8]       ; Var address
-	mov edx, [edi + 1]
-	test edx, edx
-	jz _exit_rmvalvar
-	push dword [edi + 5]
-	call free
-	mov dword [edi + 1], 0
-_exit_rmvalvar:
-	mov esp, ebp
-	pop ebp
-	ret
-;
-; Var comparing - equal.
-;
-runtime_ife:
-	push ebp
-	mov ebp, esp
-	mov edi, [ebp + 8]       ; First var pointer
-	mov edx, [ebp + 12]      ; Second var pointer
-	push edx
-	push edi
-	call runtime_varlencmp
-	add esp, 8
-	test eax, eax
-	jnz _fail_ife
-	mov byte ah, [edi]
-	cmp ah, [edx]
-	jne _fail_ife
-	mov ecx, [edi + 1]
-	mov edi, [edi + 5]
+	mov edx, [ebp - 4]
 	mov edx, [edx + 5]
-	mov eax, 1
+	push ebx
+_cycle_buff:
+	dec ecx
+	mov bl, [edx + ecx]
+	mov [eax + ecx], bl
+	test ecx, ecx
+	jnz _cycle_buff
+	pop ebx
+_exit_buff:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_IFE:
+	push ebp
+	mov ebp, esp
+	mov edx, [ebp + 8]
+	mov edi, [ebp + 12]
+	push edi
+	push edx
+	call _private_cmpvarlen
+	pop edx
+	pop edi
+	test eax, eax
+	jnz _not_equal_ife
+	mov ecx, [edi + 1]
+	test ecx, ecx
+	jz _equal_ife
+	mov edx, [edx + 5]
+	mov edi, [edi + 5]
 _cycle_ife:
 	dec ecx
-	mov byte ah, [edi + ecx]
-	mov byte al, [edx + ecx]
+	mov ah, [edx + ecx]
+	mov al, [edi + ecx]
 	cmp ah, al
-	jne _fail_ife
-	jecxz _good_ife
+	jne _not_equal_ife
+	test ecx, ecx
+	jz _equal_ife
 	jmp _cycle_ife
-_fail_ife:
-	xor eax, eax
-_good_ife:
-	mov esp, ebp
-	pop ebp
-	ret
-;
-; Var length comparing.
-; Result: 0 equal, 1 smaller, 2 bigger.
-;
-runtime_varlencmp:
-	push ebp
-	mov ebp, esp
-	mov edi, [ebp + 8]       ; First var pointer
-	mov edx, [edi + 1]
-	mov eax, [ebp + 12]      ; Second var pointer
-	mov edi, [eax + 1]
-	cmp edx, edi
-	je _equal_varlencmp
-	jl _less_varlencmp
-	mov eax, 2
-	jmp _exit_varlencmp
-_less_varlencmp:
+_equal_ife:
 	mov eax, 1
-	jmp _exit_varlencmp
-_equal_varlencmp:
+	jmp _exit_ife
+_not_equal_ife:
 	xor eax, eax
-_exit_varlencmp:
+_exit_ife:
 	mov esp, ebp
 	pop ebp
 	ret
-;
-; Var comparing - smaller or bigger.
-;
-runtime_ifsb:
+
+_runtime_IFNE:
 	push ebp
 	mov ebp, esp
-	mov edx, [ebp + 8]       ; First var pointer
-	mov edi, [ebp + 12]      ; Second var pointer
+	mov edx, [ebp + 8]
+	mov edi, [ebp + 12]
 	push edi
 	push edx
-	call runtime_varlencmp
-	add esp, 8
+	call _runtime_IFE
+	cmp eax, 0
+	je _equal_ifne
+	xor eax, eax
+	jmp _exit_ifne
+_equal_ifne:
+	mov eax, 1
+_exit_ifne:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_IFS:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov edx, [ebp + 12]
+	push edx
+	push edi
+	call _private_cmpvarlen
+	pop edi
+	pop edx
+	test eax, eax
+	jnz _cmpvarlen_ifs
+	push edx
+	push edi
+	call _private_numcmp
 	cmp eax, 1
-	jne _fail_ifsb
-	mov byte ch, [edx]
-	mov byte cl, [edi]
-	cmp ch, cl
-	jne _fail_ifsb
-	cmp ch, 4
-	jl _fail_ifsb
-	push edi
-	push edx
-	call runtime_numcmp
-	add esp, 8
-	jmp _exit_ifsb
-_fail_ifsb:
+	je _exit_ifs
 	xor eax, eax
-_exit_ifsb:
+	jmp _exit_ifs
+_cmpvarlen_ifs:
+	cmp eax, 1
+	je _exit_ifs
+	xor eax, eax
+_exit_ifs:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_IFB:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov edx, [ebp + 12]
+	push edx
+	push edi
+	call _private_cmpvarlen
+	pop edi
+	pop edx
+	test eax, eax
+	jnz _cmpvarlen_ifb
+	push edx
+	push edi
+	call _private_numcmp
+	cmp eax, 2
+	je _exit_ifb
+	xor eax, eax
+	jmp _exit_ifb
+_cmpvarlen_ifb:
+	cmp eax, 2
+	je _bigger_ifb
+	xor eax, eax
+	jmp _exit_ifb
+_bigger_ifb:
+	mov eax, 1
+_exit_ifb:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_CAT:
+	push ebp
+	mov ebp, esp
+	mov edx, [ebp + 8]
+	mov edi, [ebp + 12]
+	sub esp, 16
+	mov [ebp - 8], edx
+	mov [ebp - 4], edi
+	mov ah, [edx]
+	mov al, [edi]
+	cmp ah, al
+	jne _private_exit
+	mov ecx, [edx + 1]
+	jecxz _move_cat
+	mov esi, [edi + 1]
+	add ecx, esi
+	mov [ebp - 16], esi
+	mov [_buffer], ah
+	mov [_buffer + 1], ecx
+	xor eax, eax
+	push ecx
+	call malloc
+	pop ecx
+	test eax, eax
+	jz _private_exit
+	mov [_buffer + 5], eax
+	mov edx, [ebp - 8]
+	mov edi, [ebp - 4]
+	mov esi, [ebp - 16]
+	mov edx, [edx + 5]
+	mov edi, [edi + 5]
+	mov [ebp - 8], ecx
+	sub ecx, esi
+	push ebx
+_cycle1_cat:
+	dec ecx
+	mov bh, [edx + ecx]
+	mov [eax + ecx], bh
+	test ecx, ecx
+	jnz _cycle1_cat
+	mov ecx, [ebp - 8]
+	jecxz _exit_pop_cat
+_cycle2_cat:
+	dec ecx
+	dec esi
+	mov bh, [edi + esi]
+	mov [eax + ecx], bh
+	test esi, esi
+	jnz _cycle2_cat
+_exit_pop_cat:
+	pop ebx
+	jmp _exit_cat
+_move_cat:
+	push edx
+	call _runtime_BUFF
+_exit_cat:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_ADD:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov edx, [ebp + 12]
+	mov ah, [edi]
+	mov al, [edx]
+	cmp ah, al
+	jne _private_exit
+	mov ecx, [edi + 1]
+	mov [_buffer + 1], ecx
+	mov [_buffer], ah
+	mov edi, [edi + 5]
+	mov edx, [edx + 5]
+	cmp ah, 3
+	jl _private_exit
+	xor eax, eax
+	sub esp, 9
+	mov [ebp - 9], ah
+	mov [ebp - 8], edi
+	mov [ebp - 4], edx
+	push ecx
+	call malloc
+	add esp, 4
+	test eax, eax
+	jz _private_exit
+	mov edi, [ebp - 8]
+	mov edx, [ebp - 4]
+	mov [_buffer + 5], eax
+	cmp byte [ebp - 9], 4
+	jne _int_add
+	finit
+	fld dword [edi]
+	fld dword [edx]
+	fadd
+	fstp dword [eax]
+	jmp _exit_add
+_int_add:
+	mov edi, [edi]
+	mov edx, [edx]
+	add edi, edx
+	mov [eax], edi
+_exit_add:
 	mov esp, ebp
 	pop ebp
 	ret
 ;
-; Numbers comparing.
-; Result: 0 equal, 1 smaller, 2 bigger.
+; Private functions - Functions list which are used
+; by public functions. Functions can not be used by
+; compiler.
 ;
-runtime_numcmp:
+_private_cmpvarlen:
 	push ebp
 	mov ebp, esp
-	mov edi, [ebp + 8]       ; First var pointer
-	mov edx, [ebp + 12]      ; Second var pointer
+	mov eax, [ebp + 8]
+	mov edx, [ebp + 12]
+	mov eax, [eax + 1]
+	mov edx, [edx + 1]
+	cmp eax, edx
+	je _equal_cmpvarlen
+	jl _smaller_cmpvarlen
+	mov eax, 2
+	jmp _exit_cmpvarlen
+_smaller_cmpvarlen:
+	mov eax, 1
+	jmp _exit_cmpvarlen
+_equal_cmpvarlen:
+	xor eax, eax
+_exit_cmpvarlen:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_private_numcmp:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov edx, [ebp + 12]
 	mov byte ah, [edi]
 	mov edi, [edi + 5]
 	mov edx, [edx + 5]
 	cmp ah, 4
-	jg _float_numcmp
+	je _float_numcmp
+	mov edi, [edi]
+	mov edx, [edx]
 	cmp edi, edx
 	je _equal_numcmp
-	jl _smaller_numcmp
 	jg _bigger_numcmp
+	jl _smaller_numcmp
 _float_numcmp:
 	finit
 	fld dword [edx]
@@ -315,81 +431,8 @@ _exit_numcmp:
 	mov esp, ebp
 	pop ebp
 	ret
-;
-; Make var copy.
-;
-runtime_varcopy:
-	push ebp
-	mov ebp, esp
-	mov edx, [ebp + 8]       ; Var address
-	test edx, edx
-	jz _ekwa_exit
-	mov byte ah, [edx]
-	cmp ah, 3
-	je _array_varcopy
-	push eax
-	call runtime_varnew
-	add esp, 4
-	push edx
-	call runtime_varbuff
-	add esp, 4
-	push eax
-	call runtime_varwrt
-	jmp _exit_varcopy
-_array_varcopy:
-	push edx
-	call runtime_arraycopy
-_exit_varcopy:
-	call runtime_varbuffptr
-	call free
-	mov esp, ebp
-	pop ebp
-	ret
-;
-; Make array copy.
-;
-runtime_arraycopy:
-	push ebp
-	mov ebp, esp
-	
-	mov esp, ebp
-	pop ebp
-	ret
-;
-; Print string on the screen.
-;
-runtime_showstr:
-	push ebp
-	mov ebp, esp
-	mov edx, [ebp + 8]       ; Var address
-	mov eax, 4
-	mov ebx, 1
-	mov ecx, [edx + 5]
-	mov edx, [edx + 1]
-	syscall
-	mov esp, ebp
-	pop ebp
-	ret
-;
-; End of the program.
-;
-_ekwa_exit:
+
+_private_exit:
 	mov eax, 1
-	mov ebx, 0
+	mov ebx, 1
 	syscall
-
-_start:
-	jmp _ekwa_exit
-
-
-
-
-
-
-
-
-
-
-
-
-

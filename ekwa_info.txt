@@ -1,0 +1,66 @@
+1 байт  - Тип
+4 байта - Длина
+4 байта - Указатель на данные
+
+Массив - 3 Элемента int
+(-2-+--3 * var_size--+-Address-)
+			|
+			|----------> (-3-+--4--+-Address-)
+			|                   |
+			|                   +----------------> Value
+			|
+			|----------> (-3-+--4--+-Address-)
+			|                   |
+			|                   +----------------> Value
+			|
+			+----------> (-3-+--4--+-Address-)
+			                    |
+			                    +----------------> Value
+
+Хранение данных в .rodata:
+{Длина(4 байта)}{Контент}
+
+
+	EKWA_STRING = 0x00
+	EKWA_BOOL	= 0x01
+	EKWA_ARRAY	= 0x02
+	EKWA_INT	= 0x03
+	EKWA_FLOAT	= 0x04
+
+
+
+
+
+	EKWA_FUNC	= 0x01
+	EKWA_FARG	= 0x02
+	EKWA_VAR	= 0x03
+	EKWA_SHOW	= 0x04
+	EKWA_RET	= 0x05
+	EKWA_VAL	= 0x06
+	EKWA_CALL	= 0x07
+
+	EKWA_JMP	= 0x08
+	EKWA_FSET	= 0x09
+	EKWA_WRT	= 0x0a
+	EKWA_BUFF	= 0x0b
+	EKWA_PBUF	= 0x0c
+	EKWA_IFE	= 0x0d
+	EKWA_IFNE	= 0x0e
+	EKWA_IFS	= 0x0f
+	EKWA_IFB	= 0x10
+	EKWA_INFO	= 0x11
+	EKWA_RMV	= 0x12
+	EKWA_CAT	= 0x13
+	EKWA_EXIT	= 0x14
+	EKWA_ARG	= 0x15
+	EKWA_ARGL	= 0x16
+
+	EKWA_ADD	= 0x17
+	EKWA_SUB	= 0x19
+	EKWA_DIV	= 0x19
+	EKWA_MOD	= 0x1a
+	EKWA_MUL	= 0x1b
+	EKWA_SAL	= 0x1c
+	EKWA_SAR	= 0x1d
+
+	EKWA_END	= 0x1e
