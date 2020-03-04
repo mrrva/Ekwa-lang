@@ -15,6 +15,14 @@ extern void _runtime_BUFF(char *);
 extern void _runtime_WRT(char *);
 extern char *_runtime_VAR(char);
 
+void print_hex(char *buff, size_t len) {
+	for (size_t i = 0; i < len; i++) {
+		printf("0x%x ", buff[i]);
+	}
+
+	printf("\n");
+}
+
 int main() {
 	// New var
 	char *var1 = _runtime_VAR(0), *var2;
@@ -94,16 +102,18 @@ int main() {
 	// New float vars with comparing
 	char *var_flt1 = _runtime_VAR(4);
 	char *var_flt2 = _runtime_VAR(4);
+	float a1 = 7.0, a2 = 4.2;
 
 	free(content);
 	size = sizeof(float);
 	content = (char *)malloc(4 + size);
 
-	memcpy(content + 4, &(float){6.0}, size);
+
+	memcpy(content + 4, &a1, size);
 	memcpy(content, &size, 4);
 	_runtime_VAL(var_flt1, content);
 
-	memcpy(content + 4, &(float){4.2}, size);
+	memcpy(content + 4, &a2, size);
 	_runtime_VAL(var_flt2, content);
 
 	res = _runtime_IFS(var_flt1, var_flt2);
@@ -136,6 +146,8 @@ int main() {
 	// Add to number (float)
 	_runtime_ADD(var_flt1, var_flt2);
 	_runtime_WRT(var_flt1);
+
 	memcpy(&d, var_flt1 + 5, 4);
-	printf("Fadd res: %f\n", (float)*d);
+	memcpy(&a1, d, 4);
+	printf("Fadd res: %f\n", a1);
 }
