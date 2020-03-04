@@ -336,8 +336,7 @@ _runtime_ADD:
 	cmp ah, 3
 	jl _private_exit
 	xor eax, eax
-	sub esp, 9
-	mov [ebp - 9], ah
+	sub esp, 8
 	mov [ebp - 8], edi
 	mov [ebp - 4], edx
 	push ecx
@@ -348,7 +347,7 @@ _runtime_ADD:
 	mov edi, [ebp - 8]
 	mov edx, [ebp - 4]
 	mov [_buffer + 5], eax
-	cmp byte [ebp - 9], 4
+	cmp byte [_buffer], 4
 	jne _int_add
 	finit
 	fld dword [edi]
@@ -428,6 +427,14 @@ _smaller_numcmp:
 _equal_numcmp:
 	xor eax, eax
 _exit_numcmp:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_private_rmvar:
+	push ebp
+	mov ebp, esp
+
 	mov esp, ebp
 	pop ebp
 	ret
