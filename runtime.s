@@ -16,6 +16,7 @@ section .bss
 	global _runtime_PBUF
 	global _runtime_BUFF
 	global _runtime_IFNE
+	global _runtime_SHOW
 	global _runtime_IFB
 	global _runtime_IFS
 	global _runtime_VAR
@@ -366,6 +367,29 @@ _int_add:
 	add edi, edx
 	mov [eax], edi
 _exit_add:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_SHOW:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	test edi, edi
+	jz _private_exit
+	mov edx, [edi + 1]
+	mov cl, [edi]
+	test cl, cl
+	jnz _exit_show
+	test edx, edx
+	jz _exit_show
+	push ebx
+	mov eax, 4
+	mov ebx, 1
+	mov ecx, [edi + 5]
+	int 0x80
+	pop ebx
+_exit_show:
 	mov esp, ebp
 	pop ebp
 	ret
