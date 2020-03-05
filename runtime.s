@@ -55,13 +55,17 @@ _runtime_VAL:
 	mov ebp, esp
 	mov edx, [ebp + 8]
 	mov edi, [ebp + 12]
-	mov ecx, [edi]
-	test ecx, ecx
+	cmp dword [edi], 0
 	jz _exit_val
-	mov [edx + 1], ecx
 	sub esp, 8
 	mov [ebp - 4], edi
 	mov [ebp - 8], edx
+	push edx
+	call _private_rmval
+	pop edx
+	mov edi, [ebp - 4]
+	mov ecx, [edi]
+	xor eax, eax
 	push ecx
 	call malloc
 	pop ecx
@@ -69,6 +73,7 @@ _runtime_VAL:
 	jz _private_exit
 	mov edi, [ebp - 4]
 	mov edx, [ebp - 8]
+	mov [edx + 1], ecx
 	mov [edx + 5], eax
 _cycle_val:
 	dec ecx
@@ -434,7 +439,30 @@ _exit_numcmp:
 _private_rmvar:
 	push ebp
 	mov ebp, esp
+	mov edi, [ebp + 8]
+	test edi, edi
+	jz _exit_rmvar
+	push edi
+	call _private_rmval
+	call free
+_exit_rmvar:
+	mov esp, ebp
+	pop ebp
+	ret
 
+_private_rmval:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov esi, [edi + 1]
+	test esi, esi
+	jz _exit_rmval
+	push dword [edi + 5]
+	call free
+	add esp, 4
+	mov dword [edi + 1], 0
+_exit_rmval:
+	mov dword [edi + 5], 0
 	mov esp, ebp
 	pop ebp
 	ret
