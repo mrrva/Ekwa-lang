@@ -13,6 +13,7 @@ extern void _runtime_ADD(char *, char *);
 extern void _runtime_PBUF(char *);
 extern void _runtime_BUFF(char *);
 extern void _runtime_WRT(char *);
+extern void _runtime_SHOW(char *);
 extern char *_runtime_VAR(char);
 
 void print_hex(char *buff, size_t len) {
@@ -41,7 +42,7 @@ int main() {
 	memcpy(&vsize, var1 + 1, 4);
 	memcpy(&d, var1 + 5, sizeof(char *));
 	printf("Var size: %d, content: %s, ptr content:"
-		" %p\n", vsize, d, d);
+		" %p\n\n", vsize, d, d);
 
 	// Set buffer value and write to var (as pointer)
 	var2 = _runtime_VAR(0);
@@ -51,7 +52,7 @@ int main() {
 	memcpy(&vsize, var2 + 1, 4);
 	memcpy(&d, var2 + 5, sizeof(char *));
 	printf("> From buffer:\nVar size: %d, content: %s, "
-		"ptr content: %p\n", vsize, d, d);
+		"ptr content: %p\n\n", vsize, d, d);
 
 	// Set buffer value and write to var (as new pointer)
 	_runtime_BUFF(var1);
@@ -60,7 +61,7 @@ int main() {
 	memcpy(&vsize, var2 + 1, 4);
 	memcpy(&d, var2 + 5, sizeof(char *));
 	printf("> From buffer:\nVar size: %d, content: %s, "
-		"ptr content: %p\n", vsize, d, d);
+		"ptr content: %p\n\n", vsize, d, d);
 
 	// Vars comparing (are equal)
 	uint32_t res = _runtime_IFE(var1, var2);
@@ -90,7 +91,7 @@ int main() {
 	memcpy(&va1, var_num1 + 5, 4);
 	memcpy(&va2, var_num2 + 5, 4);
 
-	printf("Var addresses: %p : %p\nVar val: %d : %d\n",
+	printf("Var addresses: %p : %p\nVar val: %d : %d\n\n",
 		var_num1, var_num2, *va1, *va2);
 
 	res = _runtime_IFS(var_num1, var_num2);
@@ -117,7 +118,7 @@ int main() {
 	_runtime_VAL(var_flt2, content);
 
 	res = _runtime_IFS(var_flt1, var_flt2);
-	printf("Comparing result (IFS): %d\n", res);
+	printf("Comparing result (IFS): %d\n\n", res);
 
 	// Strings concatenation
 	char *var_str1 = _runtime_VAR(0);
@@ -135,7 +136,7 @@ int main() {
 
 	memcpy(&d, var_tmp + 5, sizeof(char *));
 	size = (uint32_t)*(var_tmp + 1);
-	printf("Concat: %s, size: %d\n", d, size);
+	printf("Concat: %s, size: %d\n\n", d, size);
 
 	// Add to number (int)
 	_runtime_ADD(var_num1, var_num2);
@@ -149,5 +150,10 @@ int main() {
 
 	memcpy(&d, var_flt1 + 5, 4);
 	memcpy(&a1, d, 4);
-	printf("Fadd res: %f\n", a1);
+	printf("Fadd res: %f\n\n", a1);
+
+	// Show string
+	printf("Show string: \n");
+	_runtime_SHOW(var_tmp);
+	printf("\n");
 }
