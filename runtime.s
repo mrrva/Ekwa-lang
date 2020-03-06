@@ -17,6 +17,8 @@ section .bss
 	global _runtime_BUFF
 	global _runtime_IFNE
 	global _runtime_SHOW
+	global _runtime_ALEN
+	global _runtime_AADD
 	global _runtime_IFB
 	global _runtime_IFS
 	global _runtime_VAR
@@ -91,8 +93,10 @@ _runtime_WRT:
 	push ebp
 	mov ebp, esp
 	mov edx, [ebp + 8]
+	push edx
+	call _private_rmval
+	pop edx
 	mov ecx, 9
-	; Delete value pointer.
 _cycle_wrt:
 	dec ecx
 	mov ah, [_buffer + ecx]
@@ -393,11 +397,131 @@ _exit_show:
 	mov esp, ebp
 	pop ebp
 	ret
+
+_runtime_ALEN:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov eax, [edi + 1]
+	test eax, eax
+	jz _zero_alen
+	mov cl, [edi]
+	cmp cl, 2
+	jne _zero_alen
+	cmp eax, 4
+	jl _zero_alen
+	xor edx, edx
+	mov ecx, 4
+	div ecx
+	test edx, edx
+	jz _exit_alen
+_zero_alen:
+	xor eax, eax
+_exit_alen:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_AADD:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	test edi, edi
+	jz _exit_aadd
+	mov al, [edi]
+	cmp al, 2
+	jne _exit_aadd
+	sub esp, 12
+	mov [ebp - 8], edi
+	push edi
+	call _runtime_VAR
+	add esp, 4
+	test eax, eax
+	jz _private_exit
+	mov [ebp - 12], eax
+	push eax
+	call _runtime_WRT
+	add esp, 4
+	mov edi, [ebp - 8]
+	mov ecx, [edi + 1]
+	add ecx, 4
+	push ecx
+	call malloc
+	pop ecx
+	test eax, eax
+	jz _private_exit
+	sub ecx, 4
+	mov edi, [ebp - 8]
+	test ecx, ecx
+	jz _write_aadd
+	mov edi, [edi + 5]
+	push ebx
+_cycle_aadd:
+	dec ecx
+	mov bl, [edi + ecx]
+	mov [eax + ecx], bl
+	test ecx, ecx
+	jnz _cycle_aadd
+	pop ebx
+	mov edi, [ebp - 8]
+	mov ecx, [edi + 1]
+_write_aadd:
+	add ecx, 4
+	mov [edi + 1], ecx
+	sub ecx, 4
+	mov edx, [ebp - 12]
+	mov [eax + ecx], edx
+	mov esi, [edi + 5]
+	mov [edi + 5], eax
+	test ecx, ecx
+	jz _exit_aadd
+	push esi
+	call free
+_exit_aadd:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_ARM:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov esi, [ebp + 12]
+	sub esp, 4
+	mov [ebp - 4], edi
+	push esi
+	call _private_getnum
+	pop esi
+	mov edi, [ebp - 4]
+	mov edx, 4
+	mul edx
+	mov ecx, [edi + 1]
+	cmp ecx, eax
+	jl _exit_arm
+	;mov edx, []
+
+_exit_arm:
+	mov esp, ebp
+	pop ebp
+	ret
 ;
 ; Private functions - Functions list which are used
 ; by public functions. Functions can not be used by
 ; compiler.
 ;
+_private_getnum:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov ecx, [edi + 1]
+	cmp ecx, 4
+	jne _private_exit
+	mov eax, [edi + 5]
+	mov eax, [eax]
+	mov esp, ebp
+	pop ebp
+	ret
+
 _private_cmpvarlen:
 	push ebp
 	mov ebp, esp
@@ -494,4 +618,4 @@ _exit_rmval:
 _private_exit:
 	mov eax, 1
 	mov ebx, 1
-	syscall
+	int 0x80
