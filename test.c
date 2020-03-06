@@ -7,7 +7,9 @@ extern uint32_t _runtime_IFNE(char *, char *);
 extern uint32_t _runtime_IFE(char *, char *);
 extern uint32_t _runtime_IFS(char *, char *);
 extern uint32_t _runtime_IFB(char *, char *);
-extern void _runtime_CAT(char *, char *); 
+extern uint32_t _runtime_ALEN(char *);
+extern void _runtime_AADD(char *);
+extern void _runtime_CAT(char *, char *);
 extern void _runtime_VAL(char *, char *);
 extern void _runtime_ADD(char *, char *);
 extern void _runtime_PBUF(char *);
@@ -24,7 +26,7 @@ void print_hex(char *buff, size_t len) {
 	printf("\n");
 }
 
-int main() {
+void test_1() {
 	// New var
 	char *var1 = _runtime_VAR(0), *var2;
 	printf("New var: %p & Type: %d\n", var1, var1[0]);
@@ -156,4 +158,51 @@ int main() {
 	printf("Show string: \n");
 	_runtime_SHOW(var_tmp);
 	printf("\n");
+}
+
+void test_2() {
+	char *array = _runtime_VAR(2), *var1 = _runtime_VAR(0),
+		*var2 = _runtime_VAR(0);
+
+	char *hl1 = "Hello world!", *hl2 = "Aloha!", *content, *content2,
+		*d, *d2, *el1, *el2;
+	uint32_t size = strlen(hl1) + 1, len = 0;
+
+	content = (char *)malloc(size + 4);
+	memcpy(content + 4, hl1, size);
+	memcpy(content, &size, 4);
+
+	size = strlen(hl2) + 1;
+	content2 = (char *)malloc(size + 4);
+	memcpy(content2 + 4, hl2, size);
+	memcpy(content2, &size, 4);
+
+	_runtime_VAL(var1, content);
+	_runtime_VAL(var2, content2);
+	_runtime_BUFF(var1);
+	_runtime_AADD(array);
+	_runtime_BUFF(var2);
+	_runtime_AADD(array);
+
+
+	memcpy(&d, array + 5, 4);
+	printf("%p\n", d);
+
+	memcpy(&d2, d, 4);
+	printf("%p\n", d);
+
+	memcpy(&el1, d2 + 5, 4);
+	printf("El1: %s\n", el1);
+
+
+	memcpy(&d, d + 4, 4);
+	printf("%p\n", d);
+
+	memcpy(&el2, d + 5, 4);
+	printf("El2: %s\n", el2);
+}
+
+int main() {
+	//test_1();
+	test_2();
 }
