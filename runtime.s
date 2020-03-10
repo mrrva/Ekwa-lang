@@ -19,6 +19,7 @@ section .bss
 	global _runtime_SHOW
 	global _runtime_ALEN
 	global _runtime_AADD
+	global _runtime_ABUF
 	global _runtime_ARW
 	global _runtime_RMV
 	global _runtime_ARM
@@ -523,6 +524,9 @@ _runtime_ARM:
 	mov ecx, [edi + 1]
 	test ecx, ecx
 	jz _exit_arm
+	mov cl, [edi]
+	cmp cl, 2
+	jne _exit_arm
 	sub esp, 8
 	mov [ebp - 4], edi
 	push esi
@@ -542,14 +546,14 @@ _runtime_ARM:
 	add esp, 4
 	mov edi, [ebp - 4]
 	mov ecx, [edi + 1]
-	mov esi, [ebp - 8] ; to
+	mov esi, [ebp - 8]
 	sub ecx, 4
 	cmp ecx, esi
 	je _newlen_arm
 	push ebx
-	add ecx, 4 ; end
+	add ecx, 4
 	mov ebx, esi
-	add ebx, 4 ; from
+	add ebx, 4
 	mov edi, [ebp - 4]
 	mov edi, [edi + 5]
 _cycle_arm:
@@ -577,6 +581,9 @@ _runtime_ARW:
 	mov ecx, [edi + 1]
 	test ecx, ecx
 	jz _exit_arw
+	mov cl, [edi]
+	cmp cl, 2
+	jne _exit_arm
 	sub esp, 8
 	mov [ebp - 8], edi
 	push esi
@@ -603,6 +610,37 @@ _runtime_ARW:
 	push edx
 	call _runtime_RMV
 _exit_arw:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_ABUF:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp - 8]
+	mov esi, [ebp - 12]
+	mov ecx, [edi + 1]
+	test ecx, ecx
+	jz _exit_arw
+	mov cl, [edi]
+	cmp cl, 2
+	jne _exit_abuf
+	sub esp, 4
+	mov [ebp - 4], edi
+	push esi
+	call _private_getnum
+	add esp, 4
+	mov edx, 4
+	mul edx
+	mov edi, [ebp - 4]
+	mov ecx, [edi + 1]
+	cmp eax, ecx
+	jg _private_exit
+	mov edi, [edi + 5]
+	mov edx, [edi + eax]
+	push edx
+	call _runtime_BUFF
+_exit_abuf:
 	mov esp, ebp
 	pop ebp
 	ret
