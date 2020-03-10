@@ -19,6 +19,7 @@ extern void _runtime_SHOW(char *);
 extern char *_runtime_VAR(char);
 
 extern void _runtime_ARM(char *, char *);
+extern void _runtime_ARW(char *, char *);
 
 void print_hex(char *buff, size_t len) {
 	for (size_t i = 0; i < len; i++) {
@@ -214,6 +215,31 @@ void test_2() {
 
 	size = _runtime_ALEN(array);
 	printf("Current size after removing: %d\n", size);
+
+	memcpy(&d, array + 5, 4);
+	printf("%p\n", d);
+	memcpy(&d2, d, 4);
+	printf("%p\n", d);
+	memcpy(&el1, d2 + 5, 4);
+	printf("El1: %s\n", el1);
+
+	memcpy(&d2, d + 4, 4);
+	printf("%p\n", d);
+	memcpy(&el2, d2 + 5, 4);
+	printf("El2: %s\n", el2);
+	free(content);
+
+	// Element rewrite.
+	char *var_str = _runtime_VAR(0), *str2 = "Test test 2 test.";
+	size = strlen(str2) + 1;
+
+	content = (char *)malloc(size + 4);
+	memcpy(content + 4, str2, size);
+	memcpy(content, &size, 4);
+
+	_runtime_VAL(var_str, content);
+	_runtime_BUFF(var_str);
+	_runtime_ARW(array, var_num);
 
 	memcpy(&d, array + 5, 4);
 	printf("%p\n", d);
