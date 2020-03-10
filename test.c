@@ -18,6 +18,8 @@ extern void _runtime_WRT(char *);
 extern void _runtime_SHOW(char *);
 extern char *_runtime_VAR(char);
 
+extern void _runtime_ARM(char *, char *);
+
 void print_hex(char *buff, size_t len) {
 	for (size_t i = 0; i < len; i++) {
 		printf("0x%x ", buff[i]);
@@ -162,11 +164,11 @@ void test_1() {
 
 void test_2() {
 	char *array = _runtime_VAR(2), *var1 = _runtime_VAR(0),
-		*var2 = _runtime_VAR(0);
+		*var2 = _runtime_VAR(0), *var_num;
 
 	char *hl1 = "Hello world!", *hl2 = "Aloha!", *content, *content2,
 		*d, *d2, *el1, *el2;
-	uint32_t size = strlen(hl1) + 1, len = 0;
+	uint32_t size = strlen(hl1) + 1;
 
 	content = (char *)malloc(size + 4);
 	memcpy(content + 4, hl1, size);
@@ -183,22 +185,46 @@ void test_2() {
 	_runtime_AADD(array);
 	_runtime_BUFF(var2);
 	_runtime_AADD(array);
-
+	_runtime_BUFF(var1);
+	_runtime_AADD(array);
 
 	memcpy(&d, array + 5, 4);
 	printf("%p\n", d);
-
 	memcpy(&d2, d, 4);
 	printf("%p\n", d);
-
 	memcpy(&el1, d2 + 5, 4);
 	printf("El1: %s\n", el1);
 
-
-	memcpy(&d, d + 4, 4);
+	memcpy(&d2, d + 4, 4);
 	printf("%p\n", d);
+	memcpy(&el2, d2 + 5, 4);
+	printf("El2: %s\n", el2);
+	free(content);
+	free(content2);
 
-	memcpy(&el2, d + 5, 4);
+
+	content = (char *)malloc(8);
+	memcpy(content + 4, &(int){1}, 4);
+	memcpy(content, &(int){4}, 4);
+
+	// Second element removing.
+	var_num = _runtime_VAR(3);
+	_runtime_VAL(var_num, content);
+	_runtime_ARM(array, var_num);
+
+	size = _runtime_ALEN(array);
+	printf("Current size after removing: %d\n", size);
+
+	memcpy(&d, array + 5, 4);
+	printf("%p\n", d);
+	memcpy(&d2, d, 4);
+	printf("%p\n", d);
+	memcpy(&el1, d2 + 5, 4);
+	printf("El1: %s\n", el1);
+
+	memcpy(&d2, d + 4, 4);
+	printf("%p\n", d);
+	memcpy(&el2, d2 + 5, 4);
 	printf("El2: %s\n", el2);
 }
 
