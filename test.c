@@ -20,6 +20,7 @@ extern char *_runtime_VAR(char);
 
 extern void _runtime_ARM(char *, char *);
 extern void _runtime_ARW(char *, char *);
+extern void _runtime_ABUF(char *, char *);
 
 void print_hex(char *buff, size_t len) {
 	for (size_t i = 0; i < len; i++) {
@@ -252,6 +253,13 @@ void test_2() {
 	printf("%p\n", d);
 	memcpy(&el2, d2 + 5, 4);
 	printf("El2: %s\n", el2);
+
+	// Write element to var2.
+	_runtime_ABUF(array, var_num);
+	_runtime_WRT(var2);
+
+	memcpy(&d, var2 + 5, 4);
+	printf("Written: %s\n", d);
 }
 
 int main() {
