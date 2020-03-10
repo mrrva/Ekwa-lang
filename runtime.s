@@ -19,6 +19,8 @@ section .bss
 	global _runtime_SHOW
 	global _runtime_ALEN
 	global _runtime_AADD
+	global _runtime_RMV
+	global _runtime_ARM
 	global _runtime_IFB
 	global _runtime_IFS
 	global _runtime_VAR
@@ -93,6 +95,7 @@ _runtime_WRT:
 	push ebp
 	mov ebp, esp
 	mov edx, [ebp + 8]
+	;;;; IF ARRAY ADD
 	push edx
 	call _private_rmval
 	pop edx
@@ -128,6 +131,8 @@ _runtime_BUFF:
 	mov edx, [ebp + 8]
 	mov ecx, [edx + 1]
 	mov ah, [edx]
+	cmp ah, 2
+	je _array_buff
 	mov [_buffer], ah
 	mov [_buffer + 1], ecx
 	test ecx, ecx
@@ -150,6 +155,10 @@ _cycle_buff:
 	test ecx, ecx
 	jnz _cycle_buff
 	pop ebx
+	jmp _exit_buff
+_array_buff:
+	push edx
+	call _private_arrcpy
 _exit_buff:
 	mov esp, ebp
 	pop ebp
@@ -398,6 +407,23 @@ _exit_show:
 	pop ebp
 	ret
 
+_runtime_RMV:
+	push ebp
+	mov ebp, esp
+	mov esi, [ebp + 8]
+	mov ah, [esi]
+	cmp ah, 2
+	je _array_rmv
+	push esi
+	call _private_rmvar
+	jmp _exit_rmv
+_array_rmv:
+	;
+_exit_rmv:
+	mov esp, ebp
+	pop ebp
+	ret
+
 _runtime_ALEN:
 	push ebp
 	mov ebp, esp
@@ -487,7 +513,10 @@ _runtime_ARM:
 	mov ebp, esp
 	mov edi, [ebp + 8]
 	mov esi, [ebp + 12]
-	sub esp, 4
+	mov ecx, [edi + 1]
+	test ecx, ecx
+	jz _exit_arm
+	sub esp, 8
 	mov [ebp - 4], edi
 	push esi
 	call _private_getnum
@@ -498,8 +527,36 @@ _runtime_ARM:
 	mov ecx, [edi + 1]
 	cmp ecx, eax
 	jl _exit_arm
-	;mov edx, []
-
+	mov edi, [edi + 5]
+	mov edi, [edi + eax]
+	mov [ebp - 8], eax
+	push edi
+	call _runtime_RMV
+	add esp, 4
+	mov edi, [ebp - 4]
+	mov ecx, [edi + 1]
+	mov esi, [ebp - 8] ; to
+	sub ecx, 4
+	cmp ecx, esi
+	je _newlen_arm
+	push ebx
+	add ecx, 4 ; end
+	mov ebx, esi
+	add ebx, 4 ; from
+	mov edi, [ebp - 4]
+	mov edi, [edi + 5]
+_cycle_arm:
+	mov dh, [edi + ebx]
+	mov [edi + esi], dh
+	inc esi
+	inc ebx
+	cmp ebx, ecx
+	jne _cycle_arm
+	pop ebx
+	sub ecx, 4
+_newlen_arm:
+	mov edi, [ebp - 4]
+	mov [edi + 1], ecx
 _exit_arm:
 	mov esp, ebp
 	pop ebp
@@ -509,6 +566,14 @@ _exit_arm:
 ; by public functions. Functions can not be used by
 ; compiler.
 ;
+_private_arrcpy:
+	push ebp
+	mov ebp, esp
+	; array copy to the buffer
+	mov esp, ebp
+	pop ebp
+	ret
+
 _private_getnum:
 	push ebp
 	mov ebp, esp
