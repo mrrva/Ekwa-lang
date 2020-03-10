@@ -19,6 +19,7 @@ section .bss
 	global _runtime_SHOW
 	global _runtime_ALEN
 	global _runtime_AADD
+	global _runtime_ARW
 	global _runtime_RMV
 	global _runtime_ARM
 	global _runtime_IFB
@@ -95,10 +96,16 @@ _runtime_WRT:
 	push ebp
 	mov ebp, esp
 	mov edx, [ebp + 8]
-	;;;; IF ARRAY ADD
+	mov ah, [edx]
+	cmp ah, 2
+	jne _varfree_wrt
+	; Free array value
+	jmp _start_wrt
+_varfree_wrt:
 	push edx
 	call _private_rmval
 	pop edx
+_start_wrt:
 	mov ecx, 9
 _cycle_wrt:
 	dec ecx
@@ -558,6 +565,44 @@ _newlen_arm:
 	mov edi, [ebp - 4]
 	mov [edi + 1], ecx
 _exit_arm:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_ARW:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov esi, [ebp + 12]
+	mov ecx, [edi + 1]
+	test ecx, ecx
+	jz _exit_arw
+	sub esp, 8
+	mov [ebp - 8], edi
+	push esi
+	call _private_getnum
+	pop esi
+	mov edx, 4
+	mul edx
+	mov edi, [ebp - 8]
+	cmp eax, [edi + 1]
+	jg _exit_arw
+	mov [ebp - 4], eax
+	mov dl, [_buffer]
+	push edx
+	call _runtime_VAR
+	add esp, 4
+	push eax
+	call _runtime_WRT
+	pop eax
+	mov edi, [ebp - 8]
+	mov edi, [edi + 5]
+	mov ecx, [ebp - 4]
+	mov edx, [edi + ecx]
+	mov [edi + ecx], eax
+	push edx
+	call _runtime_RMV
+_exit_arw:
 	mov esp, ebp
 	pop ebp
 	ret
