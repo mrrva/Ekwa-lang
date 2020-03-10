@@ -3,7 +3,7 @@
 4 байта - Указатель на данные
 
 Массив - 3 Элемента int
-(-2-+--3 * var_size--+-Address-)
+(-2-+--3 * pointer_size--+-Address-)
 			|
 			|----------> (-3-+--4--+-Address-)
 			|                   |
@@ -62,5 +62,12 @@
 	EKWA_MUL	= 0x1b
 	EKWA_SAL	= 0x1c
 	EKWA_SAR	= 0x1d
+
+	// tokens for array add
+	EKWA_AADD
+	EKWA_ALEN              // Длина массива
+	EKWA_ARM               // Удаление элемента
+	EKWA_ARW               // Перезапись элемента
+	EKWA_ABUF              // Добавление элемента из буфера в массив, array, {position}
 
 	EKWA_END	= 0x1e
