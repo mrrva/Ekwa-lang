@@ -13,6 +13,7 @@ section .bss
 ;
 %define _DEBUG_
 %ifdef  _DEBUG_
+	global _debug_EMPTYBUFF
 	global _runtime_PBUF
 	global _runtime_BUFF
 	global _runtime_IFNE
@@ -20,6 +21,8 @@ section .bss
 	global _runtime_ALEN
 	global _runtime_AADD
 	global _runtime_ABUF
+	global _runtime_I2F
+	global _runtime_F2I
 	global _runtime_ARW
 	global _runtime_RMV
 	global _runtime_ARM
@@ -34,6 +37,18 @@ section .bss
 %endif
 
 section .text
+
+%ifdef _DEBUG_
+_debug_EMPTYBUFF:
+	push ebp
+	mov ebp, esp
+	mov byte [_buffer], 0
+	mov dword [_buffer + 1], 0
+	mov dword [_buffer + 5], 0
+	mov esp, ebp
+	pop ebp
+	ret
+%endif
 ;
 ; Public functions - Functions list which will be
 ; used by compiler for code generation.
@@ -641,6 +656,71 @@ _runtime_ABUF:
 	push edx
 	call _runtime_BUFF
 _exit_abuf:
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_I2F:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov al, [edi]
+	cmp al, 3
+	jne _private_exit
+	mov al, 4
+	sub esp, 8
+	mov [ebp - 4], edi
+	push eax
+	call _runtime_VAR
+	add esp, 4
+	mov [ebp - 8], eax
+	mov dword [eax + 1], 4
+	push 4
+	call malloc
+	add esp, 4
+	test eax, eax
+	jz _private_exit
+	mov esi, [ebp - 8]
+	mov [esi + 5], eax
+	mov edi, [ebp - 4]
+	mov edi, [edi + 5]
+	finit
+	fild dword [edi]
+	fstp dword [eax]
+	push esi
+	call _runtime_BUFF
+	mov esp, ebp
+	pop ebp
+	ret
+
+_runtime_F2I:
+	push ebp
+	mov ebp, esp
+	mov edi, [ebp + 8]
+	mov al, [edi]
+	cmp al, 4
+	jne _private_exit
+	mov al, 3
+	sub esp, 8
+	mov [ebp - 4], edi
+	push eax
+	call _runtime_VAR
+	add esp, 4
+	mov [ebp - 8], eax
+	mov dword [eax + 1], 4
+	push 4
+	call malloc
+	add esp, 4
+	test eax, eax
+	jz _private_exit
+	mov esi, [ebp - 8]
+	mov [esi + 5], eax
+	mov edi, [ebp - 4]
+	mov edi, [edi + 5]
+	fld dword [edi]
+	fisttp dword [eax]
+	push esi
+	call _runtime_BUFF
 	mov esp, ebp
 	pop ebp
 	ret
