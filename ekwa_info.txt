@@ -68,6 +68,12 @@
 	EKWA_ALEN              // Длина массива
 	EKWA_ARM               // Удаление элемента
 	EKWA_ARW               // Перезапись элемента
-	EKWA_ABUF              // Добавление элемента из буфера в массив, array, {position}
+	EKWA_ABUF              // Добавление элемента в буфер из массива, array, {position}
+
+	EKWA_I2F               // Int to float
+	EKWA_F2I               // Float to int
 
 	EKWA_END	= 0x1e
+
+
+
