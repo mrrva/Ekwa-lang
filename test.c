@@ -3,6 +3,8 @@
 #include <inttypes.h>
 #include <string.h>
 
+extern void _debug_EMPTYBUFF(void);
+
 extern uint32_t _runtime_IFNE(char *, char *);
 extern uint32_t _runtime_IFE(char *, char *);
 extern uint32_t _runtime_IFS(char *, char *);
@@ -22,6 +24,9 @@ extern void _runtime_ARM(char *, char *);
 extern void _runtime_ARW(char *, char *);
 extern void _runtime_ABUF(char *, char *);
 
+extern void _runtime_I2F(char *);
+extern void _runtime_F2I(char *);
+
 void print_hex(char *buff, size_t len) {
 	for (size_t i = 0; i < len; i++) {
 		printf("0x%x ", buff[i]);
@@ -30,7 +35,7 @@ void print_hex(char *buff, size_t len) {
 	printf("\n");
 }
 
-void test_1() {
+void test_1(void) {
 	// New var
 	char *var1 = _runtime_VAR(0), *var2;
 	printf("New var: %p & Type: %d\n", var1, var1[0]);
@@ -254,6 +259,8 @@ void test_2() {
 	memcpy(&el2, d2 + 5, 4);
 	printf("El2: %s\n", el2);
 
+	_debug_EMPTYBUFF();
+
 	// Write element to var2.
 	_runtime_ABUF(array, var_num);
 	_runtime_WRT(var2);
@@ -262,7 +269,59 @@ void test_2() {
 	printf("Written: %s\n", d);
 }
 
+void test_3(void) {
+	char *var_float = _runtime_VAR(4);
+	char *var_int = _runtime_VAR(3);
+	char *content, *d;
+	uint32_t size;
+	float tmp = -120.14;
+	int tmp_int = -31;
+
+	// Int to float.
+	size = sizeof(int);
+	content = (char *)malloc(4 + size);
+
+	memcpy(content + 4, &tmp_int, 4);
+	memcpy(content, &size, 4);
+
+	tmp_int = 0;
+
+	_runtime_VAL(var_int, content);
+
+	memcpy(&d, var_int + 5, 4);
+	memcpy(&tmp_int, d, 4);
+	printf("Int num: %d\n", tmp_int);
+
+	_runtime_I2F(var_int);
+	_runtime_WRT(var_float);
+
+	memcpy(&d, var_float + 5, 4);
+	memcpy(&size, var_float + 1, 4);
+	memcpy(&tmp, d, 4);
+
+	printf("Converted number: %f, size: %d\n", tmp, size);
+	free(content);
+
+	// Float to int.
+	tmp = -120.14;
+	size = sizeof(float);
+	content = (char *)malloc(4 + size);
+
+	memcpy(content + 4, &tmp, 4);
+	memcpy(content, &size, 4);
+
+	_runtime_VAL(var_float, content);
+	_runtime_F2I(var_float);
+	_runtime_WRT(var_int);
+
+	memcpy(&d, var_int + 5, 4);
+	memcpy(&tmp_int, d, 4);
+
+	printf("Converted number: %d\n", tmp_int);
+}
+
 int main() {
 	//test_1();
 	test_2();
+	test_3();
 }
