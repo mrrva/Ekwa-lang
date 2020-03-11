@@ -617,8 +617,8 @@ _exit_arw:
 _runtime_ABUF:
 	push ebp
 	mov ebp, esp
-	mov edi, [ebp - 8]
-	mov esi, [ebp - 12]
+	mov edi, [ebp + 8]
+	mov esi, [ebp + 12]
 	mov ecx, [edi + 1]
 	test ecx, ecx
 	jz _exit_arw
